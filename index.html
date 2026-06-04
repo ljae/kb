@@ -7,166 +7,155 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Daily English</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f0f1a; color: #e8e8f0;
-            height: 100dvh; display: flex; flex-direction: column;
-            max-width: 480px; margin: 0 auto; overflow: hidden;
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+            background:#0f0f1a; color:#e8e8f0;
+            height:100dvh; display:flex; flex-direction:column;
+            max-width:480px; margin:0 auto; overflow:hidden;
         }
 
-        /* ── Setup ── */
+        /* Setup */
         #setup-screen {
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            padding: 40px 28px; height: 100dvh; gap: 20px;
+            display:flex; flex-direction:column; justify-content:center;
+            align-items:center; padding:40px 28px; height:100dvh; gap:20px;
         }
-        .setup-emoji { font-size: 52px; }
-        .setup-title { font-size: 26px; font-weight: 700; color: #fff; }
-        .setup-desc { font-size: 14px; color: #9999b8; text-align: center; line-height: 1.6; }
+        .setup-emoji { font-size:52px; }
+        .setup-title { font-size:26px; font-weight:700; color:#fff; }
+        .setup-desc  { font-size:14px; color:#9999b8; text-align:center; line-height:1.6; }
         .setup-input {
-            width: 100%; background: #1e1e30; border: 1px solid #2d2d45;
-            border-radius: 12px; padding: 14px 16px;
-            color: #e8e8f0; font-size: 15px; outline: none;
+            width:100%; background:#1e1e30; border:1px solid #2d2d45;
+            border-radius:12px; padding:14px 16px;
+            color:#e8e8f0; font-size:15px; outline:none;
         }
-        .setup-input:focus { border-color: #5555cc; }
+        .setup-input:focus { border-color:#5555cc; }
         .setup-btn {
-            width: 100%; padding: 16px; border-radius: 12px;
-            border: none; background: #4444bb; color: #fff;
-            font-size: 16px; font-weight: 600; cursor: pointer;
+            width:100%; padding:16px; border-radius:12px; border:none;
+            background:#4444bb; color:#fff; font-size:16px; font-weight:600; cursor:pointer;
         }
-        .setup-link { font-size: 12px; color: #6b6bcc; text-decoration: none; }
+        .setup-link { font-size:12px; color:#6b6bcc; text-decoration:none; }
 
-        /* ── Main ── */
-        #main-screen { display: none; flex-direction: column; height: 100dvh; }
+        /* Main */
+        #main-screen { display:none; flex-direction:column; height:100dvh; }
 
         .header {
-            padding: 14px 18px 10px;
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #1e1e30; background: #13131f; flex-shrink: 0;
+            padding:14px 18px 10px; display:flex; align-items:center;
+            justify-content:space-between; border-bottom:1px solid #1e1e30;
+            background:#13131f; flex-shrink:0;
         }
-        .header-title { font-size: 17px; font-weight: 700; color: #fff; }
-        .header-date { font-size: 11px; color: #6b6b88; margin-top: 1px; }
-        .header-right { display: flex; align-items: center; gap: 8px; }
-        .icon-btn { background: none; border: none; color: #6b6b88; cursor: pointer; padding: 4px; line-height: 0; }
+        .header-title { font-size:17px; font-weight:700; color:#fff; }
+        .header-date  { font-size:11px; color:#6b6b88; margin-top:1px; }
+        .header-right { display:flex; align-items:center; gap:8px; }
+        .icon-btn  { background:none; border:none; color:#6b6b88; cursor:pointer; padding:4px; line-height:0; }
         .voice-sel {
-            background: #1a1a2c; border: 1px solid #2d2d45; border-radius: 8px;
-            color: #9999cc; font-size: 12px; padding: 5px 8px; cursor: pointer; outline: none;
+            background:#1a1a2c; border:1px solid #2d2d45; border-radius:8px;
+            color:#9999cc; font-size:12px; padding:5px 8px; cursor:pointer; outline:none;
         }
 
-        /* Scenario chips */
+        /* Topic chips */
         .chip-row {
-            display: flex; gap: 7px; overflow-x: auto;
-            padding: 10px 16px 6px; scrollbar-width: none; flex-shrink: 0;
+            display:flex; gap:7px; overflow-x:auto;
+            padding:10px 16px 6px; scrollbar-width:none; flex-shrink:0;
         }
-        .chip-row::-webkit-scrollbar { display: none; }
+        .chip-row::-webkit-scrollbar { display:none; }
         .chip {
-            flex-shrink: 0; padding: 5px 13px; border-radius: 20px;
-            font-size: 12px; background: #1a1a28; color: #8888aa;
-            cursor: pointer; border: 1px solid #252535;
-            -webkit-tap-highlight-color: transparent; user-select: none;
+            flex-shrink:0; padding:5px 13px; border-radius:20px;
+            font-size:12px; background:#1a1a28; color:#8888aa;
+            cursor:pointer; border:1px solid #252535;
+            -webkit-tap-highlight-color:transparent; user-select:none;
         }
-        .chip.active { background: #30305a; color: #9999ee; border-color: #4444aa; }
+        .chip.active { background:#30305a; color:#9999ee; border-color:#4444aa; }
 
         /* Scenario card */
         .s-card {
-            margin: 0 14px 6px; padding: 10px 14px;
-            background: #16162a; border-radius: 11px; border: 1px solid #222238; flex-shrink: 0;
+            margin:0 14px 6px; padding:10px 14px;
+            background:#16162a; border-radius:11px; border:1px solid #222238; flex-shrink:0;
         }
-        .s-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #5555aa; margin-bottom: 2px; }
-        .s-title { font-size: 14px; font-weight: 600; color: #ddd; margin-bottom: 3px; }
-        .s-situation { font-size: 12px; color: #8888a8; line-height: 1.4; margin-bottom: 6px; }
-        .vocab-row { display: flex; flex-wrap: wrap; gap: 5px; }
-        .vocab-tag { font-size: 11px; padding: 2px 8px; background: #1e1e38; border-radius: 20px; color: #7070aa; }
+        .s-label { font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:#5555aa; margin-bottom:2px; }
+        .s-title { font-size:14px; font-weight:600; color:#ddd; margin-bottom:3px; }
+        .s-situation { font-size:12px; color:#8888a8; line-height:1.4; margin-bottom:6px; }
+        .vocab-row { display:flex; flex-wrap:wrap; gap:5px; }
+        .vocab-tag { font-size:11px; padding:2px 8px; background:#1e1e38; border-radius:20px; color:#7070aa; }
 
         /* Chat */
-        #chat { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { max-width: 84%; padding: 10px 13px; border-radius: 16px; font-size: 15px; line-height: 1.5; }
-        .msg.tutor  { background: #1c1c32; align-self: flex-start; border-bottom-left-radius: 4px; color: #dde; }
-        .msg.user   { background: #353590; align-self: flex-end;   border-bottom-right-radius: 4px; color: #fff; }
-        .msg.system { align-self: center; font-size: 12px; color: #555570; background: none; padding: 2px; }
+        #chat { flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+        .msg { max-width:84%; padding:10px 13px; border-radius:16px; font-size:15px; line-height:1.5; }
+        .msg.tutor     { background:#1c1c32; align-self:flex-start; border-bottom-left-radius:4px; color:#dde; }
+        .msg.user      { background:#353590; align-self:flex-end;   border-bottom-right-radius:4px; color:#fff; }
+        .msg.correction{ background:#221a00; border:1px solid #3a2800; align-self:flex-end;
+                         font-size:12px; color:#f0c040; font-style:italic; padding:7px 11px;
+                         border-bottom-right-radius:4px; }
+        .msg.system    { align-self:center; font-size:12px; color:#555570; background:none; padding:2px; }
 
-        /* Improved sentence bubble */
+        /* Improved bubble */
         .msg.improved {
-            align-self: flex-end; max-width: 88%;
-            background: #141f10; border: 1px solid #2a4a1a;
-            border-bottom-right-radius: 4px;
-            display: flex; flex-direction: column; gap: 6px;
+            align-self:flex-end; max-width:88%;
+            background:#141f10; border:1px solid #2a4a1a;
+            border-bottom-right-radius:4px;
+            display:flex; flex-direction:column; gap:6px;
         }
-        .imp-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #5a8a4a; }
-        .imp-text  { font-size: 14px; color: #aaddaa; line-height: 1.5; }
+        .imp-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:#5a8a4a; }
+        .imp-text  { font-size:14px; color:#aaddaa; line-height:1.5; }
         .shadow-btn {
-            align-self: flex-start; background: none; border: 1px solid #2a4a1a;
-            border-radius: 12px; color: #5a8a4a; font-size: 11px; padding: 3px 9px; cursor: pointer;
+            align-self:flex-start; background:none; border:1px solid #2a4a1a;
+            border-radius:12px; color:#5a8a4a; font-size:11px; padding:3px 9px; cursor:pointer;
         }
-
-        /* Suggestion chips */
-        #suggestions {
-            display: none; flex-direction: column; gap: 6px;
-            padding: 6px 14px 4px; flex-shrink: 0;
-        }
-        .sugg-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #55558a; padding-left: 2px; }
-        .sugg-row { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; }
-        .sugg-row::-webkit-scrollbar { display: none; }
-        .sugg-chip {
-            flex-shrink: 0; background: #18182e; border: 1px solid #2a2a50;
-            color: #8888cc; font-size: 13px; padding: 8px 13px;
-            border-radius: 16px; cursor: pointer; max-width: 230px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .sugg-chip:active { background: #252545; }
 
         /* Typing indicator */
         .typing {
-            display: flex; gap: 4px; align-items: center;
-            padding: 12px 14px; background: #1c1c32;
-            border-radius: 16px; border-bottom-left-radius: 4px; align-self: flex-start;
+            display:flex; gap:4px; align-items:center;
+            padding:12px 14px; background:#1c1c32;
+            border-radius:16px; border-bottom-left-radius:4px; align-self:flex-start;
         }
-        .dot { width: 6px; height: 6px; border-radius: 50%; background: #5555aa; animation: bounce 1.2s infinite; }
-        .dot:nth-child(2) { animation-delay: .2s; }
-        .dot:nth-child(3) { animation-delay: .4s; }
+        .dot { width:6px; height:6px; border-radius:50%; background:#5555aa; animation:bounce 1.2s infinite; }
+        .dot:nth-child(2){ animation-delay:.2s; }
+        .dot:nth-child(3){ animation-delay:.4s; }
         @keyframes bounce { 0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)} }
 
         /* Input bar */
         .input-bar {
-            padding: 10px 16px;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom));
-            background: #13131f; border-top: 1px solid #1e1e30;
-            display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0;
+            padding:10px 16px;
+            padding-bottom:calc(10px + env(safe-area-inset-bottom));
+            background:#13131f; border-top:1px solid #1e1e30;
+            display:flex; flex-direction:column; align-items:center; gap:8px; flex-shrink:0;
         }
         .mic-btn {
-            width: 68px; height: 68px; border-radius: 50%; border: none; background: #3a3aaa;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all .15s; -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 4px 18px rgba(58,58,170,.45);
+            width:68px; height:68px; border-radius:50%; border:none; background:#3a3aaa;
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; transition:all .15s; -webkit-tap-highlight-color:transparent;
+            box-shadow:0 4px 18px rgba(58,58,170,.45);
         }
         .mic-btn.recording { background:#bb2222; box-shadow:0 4px 22px rgba(187,34,34,.6); animation:pulse 1s infinite; }
         .mic-btn.speaking  { background:#1a7744; box-shadow:0 4px 18px rgba(26,119,68,.5); }
         @keyframes pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.07)} }
-        .mic-hint { font-size: 12px; color: #55556a; }
-        .text-row { display: flex; width: 100%; gap: 8px; }
-        .text-in {
-            flex: 1; background: #1a1a2c; border: 1px solid #252540;
-            border-radius: 22px; padding: 10px 15px; color: #e8e8f0; font-size: 15px; outline: none;
+        .mic-hint { font-size:12px; color:#55556a; }
+        .text-row { display:flex; width:100%; gap:8px; align-items:flex-end; }
+
+        /* Auto-expanding textarea — shows full suggestion text */
+        #txt {
+            flex:1; background:#1a1a2c; border:1px solid #252540;
+            border-radius:16px; padding:10px 15px;
+            color:#e8e8f0; font-size:15px; outline:none;
+            resize:none; overflow:hidden; min-height:44px; max-height:140px;
+            line-height:1.45; font-family:inherit;
         }
-        .text-in:focus { border-color: #4040aa; }
+        #txt:focus { border-color:#4040aa; }
         .send-btn {
-            width: 42px; height: 42px; border-radius: 50%; border: none;
-            background: #3a3aaa; color: #fff;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+            width:42px; height:42px; border-radius:50%; border:none;
+            background:#3a3aaa; color:#fff; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; cursor:pointer;
         }
     </style>
 </head>
 <body>
 
-<!-- ── Setup ── -->
+<!-- Setup -->
 <div id="setup-screen">
     <div class="setup-emoji">🗣️</div>
     <div class="setup-title">Daily English</div>
     <div class="setup-desc">
-        Voice conversation practice using your knowledge.<br>
-        Gemini neural TTS · shadowing · wiki-ready saves.
+        Voice conversation practice from your knowledge.<br>
+        Gemini neural TTS · shadowing × 2 · wiki saves.
     </div>
     <input id="key-in" type="password" class="setup-input"
            placeholder="Paste your Gemini API key"
@@ -177,7 +166,7 @@
     </a>
 </div>
 
-<!-- ── Main ── -->
+<!-- Main -->
 <div id="main-screen">
     <div class="header">
         <div>
@@ -192,7 +181,6 @@
                 <option value="Charon">Charon ♂</option>
                 <option value="Fenrir">Fenrir ♂</option>
             </select>
-            <!-- Save conversation -->
             <button class="icon-btn" onclick="saveConversation()" title="Save conversation">
                 <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/>
@@ -212,12 +200,6 @@
     <div class="s-card" id="s-card"></div>
     <div id="chat"></div>
 
-    <!-- Suggestion chips — shown after every tutor question -->
-    <div id="suggestions">
-        <div class="sugg-label">Try saying…</div>
-        <div class="sugg-row" id="sugg-row"></div>
-    </div>
-
     <div class="input-bar">
         <button class="mic-btn" id="mic-btn" onclick="toggleMic()">
             <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
@@ -226,10 +208,11 @@
         </button>
         <div class="mic-hint" id="mic-hint">Tap mic to speak</div>
         <div class="text-row">
-            <input id="txt" type="text" class="text-in"
-                   placeholder="Or type here…"
-                   autocorrect="off" spellcheck="false"
-                   onkeydown="if(event.key==='Enter')sendTxt()"/>
+            <textarea id="txt" rows="1"
+                placeholder="Suggested answer appears here — edit or speak it…"
+                autocorrect="off" spellcheck="false"
+                oninput="autoResize(this)"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTxt();}"></textarea>
             <button class="send-btn" onclick="sendTxt()">
                 <svg width="17" height="17" fill="white" viewBox="0 0 24 24">
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -240,129 +223,77 @@
 </div>
 
 <script>
-// ─── Scenarios ────────────────────────────────────────────────────────────────
+// ─── Scenarios (context only — Gemini generates all questions dynamically) ────
 const SCENARIOS = [
-  {
-    id: "quant-ml",
-    topic: "Quant Finance",
-    title: "ML Models in Trading",
-    persona: "Dr. Sarah Chen, senior quant researcher at a hedge fund",
-    situation: "Coffee chat — she wants your take on whether transformer models justify the hype in finance.",
-    opening: "I saw you've been reading about transformers for time series. Honestly — do you think the hype is justified, or are people just chasing benchmarks?",
-    vocabulary: ["alpha generation", "factor momentum", "overfitting", "regime detection", "Sharpe ratio"],
-    hints: ["I think transformers are useful but overfitting is still the biggest risk.", "Factor momentum seems more robust to me than pure deep learning approaches.", "The real challenge is regime detection — models trained in one market cycle fail in another."]
-  },
-  {
-    id: "quant-risk",
-    topic: "Risk & Volatility",
-    title: "Volatility Forecasting Debate",
-    persona: "Marcus, a risk manager who trusts traditional GARCH models",
-    situation: "You're pitching Bayesian and ML volatility approaches to a skeptic who has used GARCH for 15 years.",
-    opening: "I've been using GARCH for fifteen years and it works fine. Why should I bother with Bayesian or ML approaches? What are they actually solving?",
-    vocabulary: ["GARCH", "Hurst exponent", "tail risk", "drawdown", "volatility clustering"],
-    hints: ["Bayesian GARCH is faster than MCMC and gives real-time estimates.", "Individual stocks are rougher than the index because idiosyncratic shocks don't cancel out.", "ML models can adapt to regime shifts that static GARCH parameters miss."]
-  },
-  {
-    id: "quant-rl",
-    topic: "Quant Finance",
-    title: "RL for Trading",
-    persona: "Lena, a VC evaluating a quant fintech startup",
-    situation: "You're explaining why RL-based trading is promising — and where it breaks — to a skeptical investor.",
-    opening: "Everyone's pitching RL trading bots. But I keep seeing great backtests and terrible live results. What's actually different about the serious approaches?",
-    vocabulary: ["reward function", "market impact", "adaptability", "benchmark", "Q-learning"],
-    hints: ["The serious ones combine LLM signals with deep Q-networks to handle the interpretability gap.", "Live markets punish rigid agents — adaptability and risk control are more important than raw returns.", "The market-making papers show DRL can adapt bid-ask spreads better than rule-based systems."]
-  },
-  {
-    id: "claude-code",
-    topic: "AI Dev Tools",
-    title: "Agentic Coding with Claude",
-    persona: "Jamie, a startup CTO choosing between AI coding tools",
-    situation: "You're recommending Claude Code to a CTO who uses GitHub Copilot and doesn't see the difference.",
-    opening: "Everyone tells me to try Claude Code or Cursor. But I already have Copilot — it suggests lines, it saves time. What's fundamentally different?",
-    vocabulary: ["agentic workflow", "sub-agents", "context window", "multi-step tasks", "code execution"],
-    hints: ["Copilot autocompletes lines, but agentic tools plan and execute whole features end-to-end.", "Claude Code's workflow feature manages sub-agents dynamically — it can debug, refactor, and write tests in one go.", "The real difference is long-horizon tasks: you describe what you want, it figures out how."]
-  },
-  {
-    id: "gemini-ecosystem",
-    topic: "AI Dev Tools",
-    title: "Google Gemini for Developers",
-    persona: "Priya, a PM evaluating AI APIs for her team",
-    situation: "Her team uses OpenAI; her CTO wants a Gemini evaluation. She's asking for an honest comparison.",
-    opening: "Our CTO wants us to look at Gemini seriously, but we've built everything around OpenAI. What would actually make the switch worth the migration pain?",
-    vocabulary: ["managed agents", "multimodal", "file input", "rate limits", "API ecosystem"],
-    hints: ["Gemini Managed Agents give you a full stack — Linux sandbox, code execution, web browsing — in one API call.", "The 5x file size increase and direct cloud storage input is a big deal for data-heavy workflows.", "Gemini 3.5 Flash is noticeably faster for agentic tasks compared to GPT-4o."]
-  },
-  {
-    id: "flutterflow",
-    topic: "App Development",
-    title: "Visual vs. Code-First Mobile Dev",
-    persona: "Chris, a solo developer building his first mobile app",
-    situation: "He's deciding between Flutter from scratch and DreamFlow (FlutterFlow). You've used both.",
-    opening: "I have an app idea but I'm not strong in Flutter yet. Should I learn Flutter properly, or just use DreamFlow? I keep going back and forth.",
-    vocabulary: ["visual builder", "native performance", "code generation", "iteration speed", "production-ready"],
-    hints: ["DreamFlow handles 80% of features faster, and you drop to code for the tricky 20%.", "The FlutterFlow MCP integration means Claude Code can actually edit your visual app via CLI.", "For your first app, shipping fast matters more than perfect architecture."]
-  },
-  {
-    id: "singapore-trip",
-    topic: "Travel",
-    title: "Family Trip to Singapore",
-    persona: "Alex, a friend who lived in Singapore for 3 years",
-    situation: "You're planning a family trip in August 2026 and want practical advice from someone who knows it well.",
-    opening: "Singapore in August — great choice! It's hot and humid but there's so much to do. Are you thinking tourist mode, or do you want the real local experience?",
-    vocabulary: ["hawker center", "MRT", "itinerary", "heritage trail", "family-friendly"],
-    hints: ["I want a mix — good food, some culture, and things the kids can enjoy too.", "I've heard Maxwell Food Centre is a must for local food. Is that still the best?", "We're trying to balance sightseeing with not exhausting the kids in the heat."]
-  },
-  {
-    id: "theatre-education",
-    topic: "Arts Education",
-    title: "Theatre for Children",
-    persona: "Nora, a drama teacher writing a school arts program proposal",
-    situation: "She's asking you to help argue why theatre should be core curriculum, not just an extracurricular.",
-    opening: "I'm writing a proposal to make drama part of the core curriculum. The principal wants hard evidence. How would you make the case?",
-    vocabulary: ["creative confidence", "public speaking", "empathy", "performing arts", "emotional intelligence"],
-    hints: ["Theatre builds the confidence to speak in front of others — that's a lifelong professional skill.", "Role-playing teaches empathy by asking children to inhabit characters different from themselves.", "Collaboration in productions teaches teamwork in a way that textbooks simply cannot."]
-  },
-  {
-    id: "pyeongchang",
-    topic: "Travel",
-    title: "Pyeongchang Weekend Getaway",
-    persona: "Soyeon, a colleague who thinks Pyeongchang is just an Olympics venue",
-    situation: "You're convincing her that Pyeongchang in June is a great weekend idea.",
-    opening: "Wait, Pyeongchang? I always think of it as a winter ski destination. Is there actually anything worth doing there in June?",
-    vocabulary: ["scenic drive", "mountain village", "local cuisine", "off-the-beaten-path", "weekend itinerary"],
-    hints: ["In June the mountain air is cool and the scenery is beautiful — completely different from winter.", "The buckwheat noodles and local tofu dishes are incredible — food alone is worth the trip.", "It's only two hours from Seoul and the roads are easy, so it works perfectly as a two-day trip."]
-  },
-  {
-    id: "howard-marks",
-    topic: "Investment Philosophy",
-    title: "Market Cycles & Second-Level Thinking",
-    persona: "Robert, a value investor who just read Howard Marks' latest memo",
-    situation: "Lunch with a fellow investor debating whether markets are overvalued right now.",
-    opening: "I just finished Marks' latest memo on cycles. His point about everyone knowing we're late in the cycle but nobody acting on it — what do you think is going on?",
-    vocabulary: ["market cycle", "second-level thinking", "risk-adjusted return", "contrarian", "margin of safety"],
-    hints: ["Marks always says the question isn't what's happening but where we stand in the cycle relative to expectations.", "Second-level thinking means asking not just 'is this expensive?' but 'what is everyone else already pricing in?'", "The paradox is that acting on the cycle early means underperforming while everyone else is still making money."]
-  }
+  { id:"quant-ml",      topic:"Quant Finance",         title:"ML Models in Trading",
+    persona:"Dr. Sarah Chen, senior quant researcher at a hedge fund",
+    situation:"A coffee-chat where she wants your take on ML and transformer models in finance.",
+    vocabulary:["alpha","factor momentum","overfitting","regime detection","Sharpe ratio"] },
+
+  { id:"quant-risk",    topic:"Risk & Volatility",      title:"Volatility Forecasting",
+    persona:"Marcus, a risk manager who has used GARCH for 15 years",
+    situation:"You're pitching Bayesian and ML volatility approaches to a skeptic.",
+    vocabulary:["GARCH","Hurst exponent","tail risk","drawdown","volatility clustering"] },
+
+  { id:"quant-rl",      topic:"Quant Finance",          title:"RL for Trading",
+    persona:"Lena, a VC evaluating a quant fintech startup",
+    situation:"You're explaining why RL-based trading is promising — and where it fails.",
+    vocabulary:["reward function","market impact","adaptability","Q-learning","benchmark"] },
+
+  { id:"claude-code",   topic:"AI Dev Tools",           title:"Agentic Coding",
+    persona:"Jamie, a startup CTO choosing between AI coding tools",
+    situation:"You're recommending Claude Code to someone who only uses GitHub Copilot.",
+    vocabulary:["agentic workflow","sub-agents","context window","multi-step tasks","orchestration"] },
+
+  { id:"gemini",        topic:"AI Dev Tools",           title:"Google Gemini APIs",
+    persona:"Priya, a PM evaluating AI APIs for her team",
+    situation:"Her team uses OpenAI; her CTO wants an honest Gemini evaluation.",
+    vocabulary:["managed agents","multimodal","file input","rate limits","API ecosystem"] },
+
+  { id:"flutterflow",   topic:"App Development",        title:"Visual vs. Code-First Dev",
+    persona:"Chris, a solo developer building his first mobile app",
+    situation:"He's deciding between Flutter from scratch and DreamFlow. You've used both.",
+    vocabulary:["visual builder","native performance","code generation","iteration speed","MCP integration"] },
+
+  { id:"singapore",     topic:"Travel",                 title:"Singapore Family Trip",
+    persona:"Alex, a friend who lived in Singapore for 3 years",
+    situation:"You're planning a family trip there in August 2026 and want local advice.",
+    vocabulary:["hawker center","MRT","itinerary","heritage trail","humid"] },
+
+  { id:"theatre",       topic:"Arts Education",         title:"Theatre for Children",
+    persona:"Nora, a drama teacher writing a school arts program proposal",
+    situation:"She wants help arguing why theatre should be core curriculum.",
+    vocabulary:["creative confidence","public speaking","empathy","performing arts","stage fright"] },
+
+  { id:"pyeongchang",   topic:"Travel",                 title:"Pyeongchang Weekend",
+    persona:"Soyeon, a colleague who thinks Pyeongchang is just a ski destination",
+    situation:"You're convincing her it's a great June weekend trip.",
+    vocabulary:["mountain scenery","buckwheat noodles","off-season","weekend getaway","scenic drive"] },
+
+  { id:"howard-marks",  topic:"Investment Philosophy",  title:"Market Cycles & Thinking",
+    persona:"Robert, a value investor who just read Howard Marks' latest memo",
+    situation:"Lunch debate about whether markets are overvalued and how to act on it.",
+    vocabulary:["market cycle","second-level thinking","risk-adjusted return","contrarian","margin of safety"] },
 ];
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let apiKey = '';
 let scenario = null;
 let history = [];
-let conversationLog = [];   // for wiki save
+let conversationLog = [];
 let recog = null;
 let isRec = false;
 let isTalking = false;
 const synth = window.speechSynthesis;
 let ttsVoice = localStorage.getItem('tts-voice') || 'Kore';
-let ttsEl = () => document.getElementById('tts-audio');
+const ttsEl = () => document.getElementById('tts-audio');
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function init() {
     apiKey = localStorage.getItem('g-key') || '';
     if (apiKey) showMain();
-    const d = new Date();
     const el = document.getElementById('hdr-date');
-    if (el) el.textContent = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    if (el) el.textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
 
 function saveKey() {
@@ -377,36 +308,29 @@ function goSetup() {
     stopAudio();
 }
 
-function setVoice(name) {
-    ttsVoice = name; localStorage.setItem('tts-voice', name);
-}
+function setVoice(n) { ttsVoice = n; localStorage.setItem('tts-voice', n); }
 
 function showMain() {
     document.getElementById('setup-screen').style.display = 'none';
-    const m = document.getElementById('main-screen');
-    m.style.display = 'flex';
+    document.getElementById('main-screen').style.display = 'flex';
     const sel = document.getElementById('voice-sel');
     if (sel) sel.value = ttsVoice;
     renderChips();
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
-    pickScenario(dayOfYear % SCENARIOS.length);
+    const day = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
+    pickScenario(day % SCENARIOS.length);
 }
 
 // ─── Scenario ─────────────────────────────────────────────────────────────────
 function renderChips() {
-    const row = document.getElementById('chip-row');
-    row.innerHTML = SCENARIOS.map((s,i) =>
-        `<div class="chip" id="chip-${i}" onclick="pickScenario(${i})">${s.topic}</div>`
-    ).join('');
+    document.getElementById('chip-row').innerHTML =
+        SCENARIOS.map((s,i) => `<div class="chip" id="chip-${i}" onclick="pickScenario(${i})">${s.topic}</div>`).join('');
 }
 
 function pickScenario(idx) {
     document.querySelectorAll('.chip').forEach((c,i) => c.classList.toggle('active', i===idx));
     scenario = SCENARIOS[idx];
-    history = [];
-    conversationLog = [];
-    stopAudio();
-    clearSuggestions();
+    history = []; conversationLog = [];
+    stopAudio(); setSuggestion('');
 
     document.getElementById('s-card').innerHTML = `
         <div class="s-label">${scenario.topic}</div>
@@ -416,223 +340,225 @@ function pickScenario(idx) {
 
     document.getElementById('chat').innerHTML = '';
     sysMsg(`With: ${scenario.persona}`);
-
-    // Opening line (no improved bubble for tutor-initiated messages)
-    setTimeout(() => {
-        tutorMsg(scenario.opening);
-        conversationLog.push({ role:'tutor', text: scenario.opening });
-        // Show initial suggestions from scenario hints
-        setTimeout(() => showSuggestions(scenario.hints), 200);
-    }, 350);
+    startConversation();
 }
 
 // ─── Chat helpers ─────────────────────────────────────────────────────────────
 function sysMsg(t) { appendMsg(t, 'system'); }
 
 function appendMsg(t, cls) {
-    const chat = document.getElementById('chat');
     const el = document.createElement('div');
-    el.className = `msg ${cls}`;
-    el.textContent = t;
-    chat.appendChild(el);
-    scrollDown();
-    return el;
+    el.className = `msg ${cls}`; el.textContent = t;
+    document.getElementById('chat').appendChild(el);
+    scrollDown(); return el;
 }
 
-function tutorMsg(text) {
-    history.push({ role:'model', parts:[{ text }] });
-    appendMsg(text, 'tutor');
-    speak(text);
-}
-
-function showImprovedBubble(improved) {
-    const chat = document.getElementById('chat');
+function showImprovedBubble(text) {
+    const safe = text.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const el = document.createElement('div');
     el.className = 'msg improved';
-    // escape for inline handler
-    const safe = improved.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    el.innerHTML = `
-        <div class="imp-label">✦ Better English</div>
-        <div class="imp-text">${escHtml(improved)}</div>
-        <button class="shadow-btn" onclick="speak('${safe}')">🔊 Shadow again</button>
-    `;
-    chat.appendChild(el);
+    el.innerHTML = `<div class="imp-label">✦ Better English</div>
+        <div class="imp-text">${escH(text)}</div>
+        <button class="shadow-btn" onclick="speak('${safe}')">🔊 Shadow again</button>`;
+    document.getElementById('chat').appendChild(el);
     scrollDown();
 }
 
-function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function escH(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function showTyping() {
-    const chat = document.getElementById('chat');
     const el = document.createElement('div');
-    el.id = 'typing'; el.className = 'typing';
-    el.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-    chat.appendChild(el);
-    scrollDown();
+    el.id='typing'; el.className='typing';
+    el.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    document.getElementById('chat').appendChild(el); scrollDown();
 }
 function hideTyping() { document.getElementById('typing')?.remove(); }
-
 function scrollDown() {
     const c = document.getElementById('chat');
-    setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior:'smooth' }), 40);
+    setTimeout(()=>c.scrollTo({top:c.scrollHeight,behavior:'smooth'}),40);
 }
 
-// ─── Suggestion chips ─────────────────────────────────────────────────────────
-function showSuggestions(list) {
-    if (!list || !list.length) return;
-    const el = document.getElementById('suggestions');
-    const row = document.getElementById('sugg-row');
-    el.style.display = 'flex';
-    row.innerHTML = list.map(s =>
-        `<div class="sugg-chip" onclick="useSuggestion(this)">${escHtml(s)}</div>`
-    ).join('');
+// ─── Text box helpers ─────────────────────────────────────────────────────────
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
 }
 
-function clearSuggestions() {
-    document.getElementById('suggestions').style.display = 'none';
-    document.getElementById('sugg-row').innerHTML = '';
+function setSuggestion(text) {
+    const el = document.getElementById('txt');
+    el.value = text;
+    autoResize(el);
 }
 
-function useSuggestion(el) {
-    const text = el.textContent;
-    clearSuggestions();
-    // Fill the text input as a template — user can edit then send, or tap mic and speak it
-    const input = document.getElementById('txt');
-    input.value = text;
-    input.focus();
-    // scroll input into view on iOS
-    setTimeout(() => input.scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
+// ─── Gemini prompts ───────────────────────────────────────────────────────────
+function openingPrompt() {
+    const s = scenario;
+    return `You are ${s.persona}.
+Start a conversation with Jae (Korean software engineer & quant researcher) about: ${s.situation}
+
+Ask ONE direct, engaging opening question. No long preamble.
+Vocabulary to use naturally when fitting: ${s.vocabulary.join(', ')}
+
+Return ONLY valid JSON (no markdown):
+{"tutor":"<1-sentence intro + opening question>","suggestion":"<one natural example answer Jae could say, full sentence>"}`;
 }
 
-// ─── JSON extraction — 4 fallback layers ─────────────────────────────────────
+function turnPrompt() {
+    const s = scenario;
+    return `You are ${s.persona} having a real conversation with Jae (Korean software engineer & quant researcher).
+Context: ${s.situation}
+
+RULES:
+- Each question must be DIFFERENT from all previous ones — dig deeper, follow the thread
+- React genuinely to what Jae just said before asking your next question
+- Keep replies 2-3 sentences max — spoken conversation only
+- Use these terms naturally when fitting: ${s.vocabulary.join(', ')}
+
+Return ONLY valid JSON (no markdown):
+{"improved":"<Jae's sentence as fluent natural English, same meaning — fix grammar/word choice>","note":"<one grammar correction or empty string>","tutor":"<your reaction + one NEW follow-up question>","suggestion":"<one example answer Jae could give, full natural sentence>"}`;
+}
+
+// ─── JSON extraction (4 fallback layers) ─────────────────────────────────────
 function extractJSON(raw) {
     if (!raw) return null;
-    // 1. Direct parse
     try { return JSON.parse(raw); } catch {}
-    // 2. Strip ```json ... ``` fences
     const stripped = raw.replace(/^```(?:json)?\s*\n?/i,'').replace(/\n?```\s*$/,'').trim();
     try { return JSON.parse(stripped); } catch {}
-    // 3. First { ... } block
     const m = raw.match(/\{[\s\S]*\}/);
     if (m) try { return JSON.parse(m[0]); } catch {}
-    // 4. Field-by-field regex (survives unescaped newlines / truncation)
-    const str  = k => { const r=raw.match(new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`)); return r?r[1]:null; };
-    const arr  = k => { const r=raw.match(new RegExp(`"${k}"\\s*:\\s*\\[([^\\]]*?)\\]`));
-                         if(!r) return []; return [...r[1].matchAll(/"((?:[^"\\\\]|\\\\.)*)"/g)].map(x=>x[1]); };
+    // Field-by-field regex fallback
+    const str = k => { const r=raw.match(new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`)); return r?r[1]:null; };
     const tutor = str('tutor');
-    if (tutor) return { improved: str('improved')||'', note: str('note')||'', tutor, suggestions: arr('suggestions') };
+    if (tutor) return { improved:str('improved')||'', note:str('note')||'', tutor, suggestion:str('suggestion')||'' };
     return null;
 }
 
-// ─── Gemini API (structured JSON) ─────────────────────────────────────────────
-function sysPrompt() {
-    const s = scenario;
-    return `You are simultaneously an English tutor AND ${s.persona}, speaking with Jae (Korean software engineer & quant researcher).
-
-SCENARIO: ${s.situation}
-
-Reply with ONLY this JSON (no markdown fences, no extra text):
-{"improved":"<fluent version of Jae's sentence, same meaning>","note":"<one grammar note or empty string>","tutor":"<your 2-3 sentence in-character reply, end with a question>","suggestions":["<example reply 1>","<example reply 2>","<example reply 3>"]}
-
-Rules: improved keeps Jae's meaning but fixes grammar/naturalness. tutor stays in character and uses these words naturally when fitting: ${s.vocabulary.join(', ')}. suggestions are short (1 sentence each) example answers to your own question.`;
-}
-
-async function callGemini(userText) {
-    history.push({ role:'user', parts:[{ text: userText }] });
+// ─── Start conversation (Gemini generates the opening) ────────────────────────
+async function startConversation() {
     showTyping();
-
     try {
         const res = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: { parts:[{ text: sysPrompt() }] },
-                    contents: history,
-                    generationConfig: {
-                        temperature: 0.8,
-                        maxOutputTokens: 1024,
-                        responseMimeType: 'application/json',
-                        responseSchema: {
-                            type: 'OBJECT',
-                            properties: {
-                                improved:    { type: 'STRING' },
-                                note:        { type: 'STRING' },
-                                tutor:       { type: 'STRING' },
-                                suggestions: { type: 'ARRAY', items: { type: 'STRING' } }
-                            },
-                            required: ['improved','note','tutor','suggestions']
-                        }
+            { method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                contents: [{ role:'user', parts:[{text:'[START]'}] }],
+                system_instruction: { parts:[{text: openingPrompt()}] },
+                generationConfig: {
+                    temperature: 0.9, maxOutputTokens: 300,
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type:'OBJECT',
+                        properties:{ tutor:{type:'STRING'}, suggestion:{type:'STRING'} },
+                        required:['tutor','suggestion']
                     }
-                })
+                }
+              })
             }
         );
         hideTyping();
-
-        if (!res.ok) {
-            const e = await res.json().catch(()=>({}));
-            appendMsg(`⚠ API error: ${e?.error?.message || res.status}`, 'system');
-            if ((e?.error?.message||'').toLowerCase().includes('api key')) goSetup();
-            return;
-        }
-
+        if (!res.ok) { const e=await res.json().catch(()=>({})); appendMsg(`⚠ ${e?.error?.message||res.status}`,'system'); return; }
         const data = await res.json();
         const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        const parsed = extractJSON(raw) || {};
+        const tutor = parsed.tutor || '(No opening generated — check API key)';
+        const suggestion = parsed.suggestion || '';
 
-        const parsed = extractJSON(raw) || { improved: userText, note:'', tutor: raw, suggestions: [] };
-
-        const { improved = userText, note = '', tutor = '', suggestions = [] } = parsed;
-
-        // Log user turn
-        conversationLog.push({ role:'user', original: userText, improved, note });
-
-        // Show improved bubble immediately
-        const isDifferent = improved.trim().toLowerCase() !== userText.trim().toLowerCase();
-        if (isDifferent) showImprovedBubble(improved);
-        if (note) setTimeout(() => appendMsg(`📝 ${note}`, 'correction'), 80);
-
-        // Sequential flow: shadow improved ×2 → show & speak tutor → suggestions
-        (async () => {
-            if (isDifferent) {
-                await speak(improved);           // 1st shadow
-                await speak(improved);           // 2nd shadow (repeat for muscle memory)
-            }
-            // Now show and speak the tutor's follow-up question
-            history.push({ role:'model', parts:[{ text: tutor }] });
-            conversationLog.push({ role:'tutor', text: tutor });
-            appendMsg(tutor, 'tutor');
-            await speak(tutor);
-            showSuggestions(suggestions);
-        })();
-
-    } catch (err) {
+        // Add to history as a model turn
+        history.push({ role:'model', parts:[{text:tutor}] });
+        conversationLog.push({ role:'tutor', text:tutor });
+        appendMsg(tutor, 'tutor');
+        setSuggestion(suggestion);
+        await speak(tutor);
+    } catch(err) {
         hideTyping();
         appendMsg(`⚠ Network error: ${err.message}`, 'system');
     }
 }
 
-// ─── Speech Input ─────────────────────────────────────────────────────────────
+// ─── Main exchange (user replied → get improved + next question) ──────────────
+async function callGemini(userText) {
+    history.push({ role:'user', parts:[{text:userText}] });
+    showTyping();
+    try {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+            { method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                system_instruction: { parts:[{text: turnPrompt()}] },
+                contents: history,
+                generationConfig: {
+                    temperature: 0.85, maxOutputTokens: 600,
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type:'OBJECT',
+                        properties:{
+                            improved:   {type:'STRING'},
+                            note:       {type:'STRING'},
+                            tutor:      {type:'STRING'},
+                            suggestion: {type:'STRING'}
+                        },
+                        required:['improved','note','tutor','suggestion']
+                    }
+                }
+              })
+            }
+        );
+        hideTyping();
+        if (!res.ok) {
+            const e=await res.json().catch(()=>({}));
+            appendMsg(`⚠ API error: ${e?.error?.message||res.status}`,'system');
+            if ((e?.error?.message||'').toLowerCase().includes('api key')) goSetup();
+            return;
+        }
+        const data = await res.json();
+        const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        const parsed = extractJSON(raw) || { improved:userText, note:'', tutor:'(error)', suggestion:'' };
+        const { improved=userText, note='', tutor='', suggestion='' } = parsed;
+
+        conversationLog.push({ role:'user', original:userText, improved, note });
+
+        const isDiff = improved.trim().toLowerCase() !== userText.trim().toLowerCase();
+        if (isDiff) showImprovedBubble(improved);
+        if (note)  setTimeout(()=>appendMsg(`📝 ${note}`,'correction'), 80);
+
+        // Flow: shadow improved ×2 → show tutor → speak tutor → prefill suggestion
+        (async () => {
+            if (isDiff) {
+                await speak(improved);  // shadow 1
+                await speak(improved);  // shadow 2
+            }
+            history.push({ role:'model', parts:[{text:tutor}] });
+            conversationLog.push({ role:'tutor', text:tutor });
+            appendMsg(tutor, 'tutor');
+            await speak(tutor);
+            setSuggestion(suggestion);
+        })();
+
+    } catch(err) {
+        hideTyping();
+        appendMsg(`⚠ Network error: ${err.message}`, 'system');
+    }
+}
+
+// ─── Speech input ─────────────────────────────────────────────────────────────
 function initRecog() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return null;
     const r = new SR();
-    r.continuous = false; r.interimResults = false; r.lang = 'en-US';
-    r.onresult = e => { const t = e.results[0][0].transcript; stopRec(); handleInput(t); };
+    r.continuous=false; r.interimResults=false; r.lang='en-US';
+    r.onresult = e => { const t=e.results[0][0].transcript; stopRec(); handleInput(t); };
     r.onerror  = e => {
         stopRec();
         const msgs = {
-            'not-allowed': '🎤 Mic blocked. In Safari: Settings → [this site] → Microphone → Allow, then reload.',
-            'no-speech':   null,   // silent — user just didn't speak
-            'network':     '⚠ Speech recognition needs a network connection.',
-            'aborted':     null,
+            'not-allowed':'🎤 Mic blocked. Safari → Settings → this site → Microphone → Allow, then reload.',
+            'no-speech':  null,
+            'network':    '⚠ Speech recognition needs a network connection.',
+            'aborted':    null,
         };
-        const msg = msgs[e.error] !== undefined ? msgs[e.error] : `⚠ Mic error: ${e.error}`;
+        const msg = msgs[e.error]!==undefined ? msgs[e.error] : `⚠ Mic error: ${e.error}`;
         if (msg) appendMsg(msg, 'system');
     };
-    r.onend = () => { if (isRec) stopRec(); };
+    r.onend = ()=>{ if(isRec) stopRec(); };
     return r;
 }
 
@@ -644,42 +570,29 @@ function toggleMic() {
 
 function startRec() {
     if (!recog) recog = initRecog();
-    if (!recog) {
-        appendMsg('⚠ Speech recognition not supported in this browser. Please type instead.', 'system');
-        document.getElementById('txt').focus();
-        return;
-    }
+    if (!recog) { appendMsg('⚠ Voice not supported — please type.','system'); document.getElementById('txt').focus(); return; }
     stopAudio();
-    try {
-        recog.start();
-        isRec = true; updateMic();
-    } catch(e) {
-        // Already started — recreate and try once more
+    try { recog.start(); isRec=true; updateMic(); }
+    catch(e) {
         recog = initRecog();
-        try { recog.start(); isRec = true; updateMic(); }
-        catch(e2) { appendMsg(`⚠ Could not start mic: ${e2.message}`, 'system'); }
+        try { recog.start(); isRec=true; updateMic(); }
+        catch(e2) { appendMsg(`⚠ Mic error: ${e2.message}`,'system'); }
     }
 }
 
-function stopRec() {
-    try { recog?.stop(); } catch(e) {}
-    isRec = false; updateMic();
-}
+function stopRec() { try{recog?.stop();}catch(e){} isRec=false; updateMic(); }
 
 function updateMic() {
-    const btn = document.getElementById('mic-btn');
-    const hint = document.getElementById('mic-hint');
-    btn.className = 'mic-btn';
-    if (isRec)       { btn.classList.add('recording'); hint.textContent = 'Listening… tap to stop'; }
-    else if(isTalking){ btn.classList.add('speaking');  hint.textContent = 'Tap mic to interrupt'; }
-    else              { hint.textContent = 'Tap mic to speak'; }
+    const btn=document.getElementById('mic-btn'), hint=document.getElementById('mic-hint');
+    btn.className='mic-btn';
+    if(isRec)        { btn.classList.add('recording'); hint.textContent='Listening… tap to stop'; }
+    else if(isTalking){ btn.classList.add('speaking');  hint.textContent='Tap mic to interrupt'; }
+    else              { hint.textContent='Tap mic to speak'; }
 }
 
-// ─── TTS (Gemini neural) ──────────────────────────────────────────────────────
-
-// Build a 200ms silent mono 8-bit 8kHz WAV blob URL for iOS audio unlock
+// ─── TTS (Gemini neural, returns Promise) ────────────────────────────────────
 function makeSilentUrl() {
-    const sr=8000, n=1600; // 200ms @ 8kHz
+    const sr=8000, n=1600;
     const buf=new ArrayBuffer(44+n); const v=new DataView(buf);
     const s=(o,t)=>[...t].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
     s(0,'RIFF'); v.setUint32(4,36+n,true); s(8,'WAVE'); s(12,'fmt ');
@@ -687,79 +600,69 @@ function makeSilentUrl() {
     v.setUint32(24,sr,true); v.setUint32(28,sr,true);
     v.setUint16(32,1,true); v.setUint16(34,8,true);
     s(36,'data'); v.setUint32(40,n,true);
-    new Uint8Array(buf,44).fill(128); // 128 = silence for 8-bit unsigned PCM
+    new Uint8Array(buf,44).fill(128);
     return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
 }
 
 function unlockAudio() {
-    const el = ttsEl();
-    if (!el || el.dataset.unlocked) return;
-    const url = makeSilentUrl();
-    el.src = url;
-    el.play()
-        .then(()=>{ el.pause(); el.src=''; el.dataset.unlocked='1'; URL.revokeObjectURL(url); })
-        .catch(()=>{ URL.revokeObjectURL(url); });
+    const el=ttsEl();
+    if (!el||el.dataset.unlocked) return;
+    const url=makeSilentUrl();
+    el.src=url;
+    el.play().then(()=>{el.pause();el.src='';el.dataset.unlocked='1';URL.revokeObjectURL(url);}).catch(()=>{URL.revokeObjectURL(url);});
 }
 
 function stopAudio() {
-    const el = ttsEl();
-    if (el) { el.pause(); el.src=''; }
-    isTalking = false; updateMic();
+    const el=ttsEl(); if(el){el.pause();el.src='';}
+    isTalking=false; updateMic();
 }
 
-function pcmToWav(pcmBytes) {
-    const sr=24000, ch=1, bps=16, dataLen=pcmBytes.byteLength;
-    const buf=new ArrayBuffer(44+dataLen); const v=new DataView(buf);
-    const str=(off,s)=>[...s].forEach((c,i)=>v.setUint8(off+i,c.charCodeAt(0)));
-    str(0,'RIFF'); v.setUint32(4,36+dataLen,true);
-    str(8,'WAVE'); str(12,'fmt ');
-    v.setUint32(16,16,true); v.setUint16(20,1,true);
-    v.setUint16(22,ch,true); v.setUint32(24,sr,true);
-    v.setUint32(28,sr*ch*bps/8,true); v.setUint16(32,ch*bps/8,true);
-    v.setUint16(34,bps,true); str(36,'data'); v.setUint32(40,dataLen,true);
-    new Uint8Array(buf,44).set(new Uint8Array(pcmBytes));
+function pcmToWav(bytes) {
+    const sr=24000,ch=1,bps=16,n=bytes.byteLength;
+    const buf=new ArrayBuffer(44+n); const v=new DataView(buf);
+    const s=(o,t)=>[...t].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+    s(0,'RIFF'); v.setUint32(4,36+n,true); s(8,'WAVE'); s(12,'fmt ');
+    v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,ch,true);
+    v.setUint32(24,sr,true); v.setUint32(28,sr*ch*bps/8,true);
+    v.setUint16(32,ch*bps/8,true); v.setUint16(34,bps,true);
+    s(36,'data'); v.setUint32(40,n,true);
+    new Uint8Array(buf,44).set(new Uint8Array(bytes));
     return buf;
 }
 
-// Returns a Promise that resolves when audio finishes (for sequential playback)
 function speak(text) {
     const clean = text.replace(/\[Note:[^\]]+\]/g,'').trim();
     if (!clean) return Promise.resolve();
     stopAudio();
-
-    return new Promise(async (resolve) => {
+    return new Promise(async resolve => {
         try {
             const res = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${encodeURIComponent(apiKey)}`,
-                {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({
-                        contents:[{ parts:[{ text: clean }] }],
-                        generationConfig:{
-                            responseModalities:['AUDIO'],
-                            speechConfig:{ voiceConfig:{ prebuiltVoiceConfig:{ voiceName: ttsVoice } } }
-                        }
-                    })
+                { method:'POST', headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({
+                    contents:[{parts:[{text:clean}]}],
+                    generationConfig:{
+                        responseModalities:['AUDIO'],
+                        speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:ttsVoice}}}
+                    }
+                  })
                 }
             );
             if (!res.ok) throw new Error(`TTS ${res.status}`);
             const data = await res.json();
             const b64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
             if (!b64) throw new Error('no audio');
-
-            const bytes = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
-            const wav   = pcmToWav(bytes.buffer);
-            const blob  = new Blob([wav], { type:'audio/wav' });
+            const bytes = Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+            const blob  = new Blob([pcmToWav(bytes.buffer)],{type:'audio/wav'});
             const url   = URL.createObjectURL(blob);
-
-            const el = ttsEl();
+            const el    = ttsEl();
             el.src = url;
-            el.onended = () => { isTalking=false; updateMic(); URL.revokeObjectURL(url); resolve(); };
-            el.onerror = () => { isTalking=false; updateMic(); speakFallback(clean).then(resolve); };
-            isTalking = true; updateMic();
+            el.onended = ()=>{ isTalking=false; updateMic(); URL.revokeObjectURL(url); resolve(); };
+            el.onerror = ()=>{ isTalking=false; updateMic(); speakFallback(clean).then(resolve); };
+            isTalking=true; updateMic();
             await el.play();
         } catch(err) {
-            console.warn('TTS error:', err.message);
+            console.warn('TTS:', err.message);
             await speakFallback(clean);
             resolve();
         }
@@ -772,17 +675,17 @@ function speakFallback(text) {
         synth.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.lang='en-US'; u.rate=0.90;
-        u.onstart = ()=>{ isTalking=true;  updateMic(); };
-        u.onend   = ()=>{ isTalking=false; updateMic(); resolve(); };
-        u.onerror = ()=>{ isTalking=false; updateMic(); resolve(); };
+        u.onstart=()=>{ isTalking=true;  updateMic(); };
+        u.onend  =()=>{ isTalking=false; updateMic(); resolve(); };
+        u.onerror=()=>{ isTalking=false; updateMic(); resolve(); };
         synth.speak(u);
     });
 }
 
-// ─── Input ────────────────────────────────────────────────────────────────────
+// ─── Input handling ───────────────────────────────────────────────────────────
 function handleInput(text) {
     if (!text.trim()) return;
-    clearSuggestions();
+    setSuggestion('');
     appendMsg(text, 'user');
     callGemini(text);
 }
@@ -790,65 +693,37 @@ function handleInput(text) {
 function sendTxt() {
     unlockAudio();
     const el = document.getElementById('txt');
-    const t = el.value.trim();
+    const t  = el.value.trim();
     if (!t) return;
-    el.value = '';
+    el.value = ''; autoResize(el);
     handleInput(t);
 }
 
-// ─── Save conversation as markdown (drop into raw/inbox/) ─────────────────────
+// ─── Save conversation ────────────────────────────────────────────────────────
 function saveConversation() {
     if (!conversationLog.length) { alert('No conversation to save yet.'); return; }
-
-    const s = scenario;
-    const now = new Date();
-    const date = now.toISOString().slice(0,10);
-    const time = now.toTimeString().slice(0,5).replace(':','-');
-
-    let md = `---
-title: English Practice - ${s.title}
-date: ${date}
-type: conversation-practice
-scenario: ${s.id}
-topic: ${s.topic}
-persona: "${s.persona}"
-tags: [english-practice, speaking, ${s.id}]
-sources: []
----
-
-# English Practice: ${s.title}
-
-**With**: ${s.persona}
-**Topic**: ${s.topic}
-**Scenario**: ${s.situation}
-**Vocabulary focus**: ${s.vocabulary.join(', ')}
-
----
-
-`;
-
-    for (const turn of conversationLog) {
-        if (turn.role === 'tutor') {
-            const name = s.persona.split(',')[0];
-            md += `**${name}**: ${turn.text}\n\n`;
-        } else {
-            md += `**Jae**: ${turn.original}\n`;
-            if (turn.improved && turn.improved.trim().toLowerCase() !== turn.original.trim().toLowerCase()) {
-                md += `> ✦ *${turn.improved}*\n`;
-            }
-            if (turn.note) md += `> 📝 ${turn.note}\n`;
+    const s=scenario, now=new Date();
+    const date=now.toISOString().slice(0,10), time=now.toTimeString().slice(0,5).replace(':','-');
+    let md = `---\ntitle: English Practice - ${s.title}\ndate: ${date}\ntype: conversation-practice\n` +
+             `scenario: ${s.id}\ntopic: ${s.topic}\npersona: "${s.persona}"\n` +
+             `tags: [english-practice, speaking, ${s.id}]\nsources: []\n---\n\n` +
+             `# English Practice: ${s.title}\n\n**With**: ${s.persona}\n**Topic**: ${s.topic}\n` +
+             `**Scenario**: ${s.situation}\n**Vocabulary**: ${s.vocabulary.join(', ')}\n\n---\n\n`;
+    for (const t of conversationLog) {
+        if (t.role==='tutor') md += `**${s.persona.split(',')[0]}**: ${t.text}\n\n`;
+        else {
+            md += `**Jae**: ${t.original}\n`;
+            if (t.improved && t.improved.trim().toLowerCase()!==t.original.trim().toLowerCase())
+                md += `> ✦ *${t.improved}*\n`;
+            if (t.note) md += `> 📝 ${t.note}\n`;
             md += '\n';
         }
     }
-
     md += `\n---\n*Saved ${now.toLocaleString()} · Drop into \`raw/inbox/\` for wiki ingestion.*\n`;
-
-    const filename = `${date}-${time}-english-${s.id}.md`;
-    const blob = new Blob([md], { type:'text/markdown' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));
+    a.download=`${date}-${time}-english-${s.id}.md`;
+    a.click();
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
