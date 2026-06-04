@@ -241,6 +241,9 @@
         </div>
     </div>
 
+    <!-- hidden audio element — iOS requires a real element to play async audio -->
+    <audio id="tts-audio" playsinline style="display:none"></audio>
+
     <div class="chip-row" id="chip-row"></div>
     <div class="s-card" id="s-card"></div>
 
@@ -580,6 +583,7 @@ function initRecog() {
 }
 
 function toggleMic() {
+    unlockAudio();
     if (isTalking) { stopAudio(); return; }
     isRec ? stopRec() : startRec();
 }
@@ -618,12 +622,41 @@ function updateMic() {
 
 // ─── Text-to-Speech (Gemini neural TTS) ──────────────────────────────────────
 // Voices: Aoede (warm F), Kore (clear F), Puck (warm M), Charon (deep M), Fenrir (energetic M)
+//
+// iOS Safari blocks async audio unless the <audio> element is "unlocked" by a
+// direct user tap first. We call unlockAudio() on every mic/send tap so the
+// element is always ready before the API response arrives.
+
+const ttsEl = () => document.getElementById('tts-audio');
+
+function unlockAudio() {
+    const el = ttsEl();
+    if (!el || el.dataset.unlocked) return;
+    el.play().then(() => { el.pause(); el.dataset.unlocked = '1'; }).catch(() => {});
+}
 
 function stopAudio() {
-    try { audioSrc?.stop(); } catch (e) {}
-    try { audioCtx?.close(); } catch (e) {}
-    audioSrc = null; audioCtx = null;
+    const el = ttsEl();
+    if (el) { el.pause(); el.src = ''; }
     isTalking = false; updateMic();
+}
+
+// PCM (Int16, mono, 24 kHz) → WAV ArrayBuffer so <audio> can decode it
+function pcmToWav(pcmBytes) {
+    const sr = 24000, ch = 1, bps = 16;
+    const dataLen = pcmBytes.byteLength;
+    const buf = new ArrayBuffer(44 + dataLen);
+    const v = new DataView(buf);
+    const str = (off, s) => [...s].forEach((c, i) => v.setUint8(off + i, c.charCodeAt(0)));
+    str(0, 'RIFF'); v.setUint32(4, 36 + dataLen, true);
+    str(8, 'WAVE'); str(12, 'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+    v.setUint16(22, ch, true); v.setUint32(24, sr, true);
+    v.setUint32(28, sr * ch * bps / 8, true); v.setUint16(32, ch * bps / 8, true);
+    v.setUint16(34, bps, true); str(36, 'data');
+    v.setUint32(40, dataLen, true);
+    new Uint8Array(buf, 44).set(new Uint8Array(pcmBytes));
+    return buf;
 }
 
 async function speak(text) {
@@ -652,23 +685,21 @@ async function speak(text) {
         if (!res.ok) throw new Error(`TTS ${res.status}`);
         const data = await res.json();
         const b64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (!b64) throw new Error('no audio');
+        if (!b64) throw new Error('no audio data in response');
 
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        const pcm   = new Int16Array(bytes.buffer);
-        audioCtx    = new (window.AudioContext || window.webkitAudioContext)();
-        const buf   = audioCtx.createBuffer(1, pcm.length, 24000);
-        const ch    = buf.getChannelData(0);
-        for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
+        const pcmBytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        const wavBuf   = pcmToWav(pcmBytes.buffer);
+        const blob     = new Blob([wavBuf], { type: 'audio/wav' });
+        const url      = URL.createObjectURL(blob);
 
-        audioSrc = audioCtx.createBufferSource();
-        audioSrc.buffer = buf;
-        audioSrc.connect(audioCtx.destination);
+        const el = ttsEl();
+        el.src = url;
+        el.onended = () => { isTalking = false; updateMic(); URL.revokeObjectURL(url); };
+        el.onerror = () => { isTalking = false; updateMic(); speakFallback(clean); };
         isTalking = true; updateMic();
-        audioSrc.onended = () => { isTalking = false; updateMic(); audioCtx?.close(); };
-        audioSrc.start();
+        await el.play();
     } catch (err) {
-        console.warn('Gemini TTS error, falling back:', err);
+        console.warn('Gemini TTS error, falling back to browser TTS:', err.message);
         speakFallback(clean);
     }
 }
@@ -692,6 +723,7 @@ function handleInput(text) {
 }
 
 function sendTxt() {
+    unlockAudio();
     const el = document.getElementById('txt');
     const t = el.value.trim();
     if (!t) return;
