@@ -455,8 +455,7 @@ async function startConversation() {
               body: JSON.stringify({
                 contents: [{ role:'user', parts:[{text:'[START]'}] }],
                 system_instruction: { parts:[{text: openingPrompt()}] },
-                generationConfig: { temperature:0.9, maxOutputTokens:400,
-                                    responseMimeType:'application/json' }
+                generationConfig: { temperature:0.9, maxOutputTokens:400 }
               })
             }
         );
@@ -506,10 +505,7 @@ async function callGemini(userText) {
               body: JSON.stringify({
                 system_instruction: { parts:[{text: turnPrompt()}] },
                 contents: history,
-                generationConfig: {
-                    temperature: 0.85, maxOutputTokens: 700,
-                    responseMimeType: 'application/json'
-                }
+                generationConfig: { temperature:0.85, maxOutputTokens:700 }
               })
             }
         );
