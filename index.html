@@ -523,19 +523,10 @@ function sysPrompt() {
 
 SCENARIO: ${s.situation}
 
-ALWAYS respond with ONLY a valid JSON object — no markdown, no explanation:
-{
-  "improved": "A natural, fluent English version of what Jae just said (fix grammar/word choice/naturalness; if already perfect, return the same sentence)",
-  "note": "One short grammar note if there was a clear mistake, otherwise empty string",
-  "tutor": "Your in-character response as ${s.persona} (2-4 sentences, spoken English, end with a question or invitation)",
-  "suggestions": ["short example answer 1", "short example answer 2", "short example answer 3"]
-}
+Reply with ONLY this JSON (no markdown fences, no extra text):
+{"improved":"<fluent version of Jae's sentence, same meaning>","note":"<one grammar note or empty string>","tutor":"<your 2-3 sentence in-character reply, end with a question>","suggestions":["<example reply 1>","<example reply 2>","<example reply 3>"]}
 
-RULES:
-- improved: preserve Jae's meaning exactly, just make it more natural English
-- note: e.g. "Use 'have gone' not 'have went'" — empty string if no mistake
-- tutor: stay in character; react naturally; weave in vocabulary when fitting: ${s.vocabulary.join(', ')}
-- suggestions: 3 short (1-2 sentence) example responses to YOUR question that Jae could say`;
+Rules: improved keeps Jae's meaning but fixes grammar/naturalness. tutor stays in character and uses these words naturally when fitting: ${s.vocabulary.join(', ')}. suggestions are short (1 sentence each) example answers to your own question.`;
 }
 
 async function callGemini(userText) {
@@ -553,7 +544,7 @@ async function callGemini(userText) {
                     contents: history,
                     generationConfig: {
                         temperature: 0.8,
-                        maxOutputTokens: 500,
+                        maxOutputTokens: 1024,
                         responseMimeType: 'application/json'
                     }
                 })
@@ -662,10 +653,15 @@ function updateMic() {
 }
 
 // ─── TTS (Gemini neural) ──────────────────────────────────────────────────────
+// 100ms silent WAV — iOS requires a real src to grant audio permission
+const SILENT_WAV = 'data:audio/wav;base64,UklGRl9vT1dBVkVmbXQgEAAAAA' +
+    'AAAQAARKwAAIhYAQACABAAZGF0YUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+
 function unlockAudio() {
     const el = ttsEl();
     if (!el || el.dataset.unlocked) return;
-    el.play().then(()=>{ el.pause(); el.dataset.unlocked='1'; }).catch(()=>{});
+    el.src = SILENT_WAV;
+    el.play().then(()=>{ el.pause(); el.src=''; el.dataset.unlocked='1'; }).catch(()=>{});
 }
 
 function stopAudio() {
