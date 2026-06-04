@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.kb-drain</string>
+
+    <!-- launchd on recent macOS rejects /Volumes/* paths for ProgramArguments,
+         WorkingDirectory, and Standard{Out,Error}Path due to TCC sandboxing
+         (EX_CONFIG / 78 with no stderr if any of those touch /Volumes).
+         Workaround: keep every launchd-facing path inside $HOME, and let the
+         shell wrapper handle the cd into the SSD at runtime. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <string>-c</string>
+        <string>cd /Volumes/ORICO/kb/scripts/inbox && exec ./.venv/bin/python ./drain_telegram.py</string>
+    </array>
+
+    <!-- Every 15 minutes. launchd skips runs while the Mac is asleep. -->
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/jaelee/Library/Logs/kb-drain.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jaelee/Library/Logs/kb-drain.stderr.log</string>
+
+    <!-- Extend PATH so whisper / ffmpeg from Homebrew are findable. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>

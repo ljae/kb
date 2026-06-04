@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Obsidian (if user later opts in)
+.obsidian/workspace*
+.obsidian/cache
+
+# Private files: PII handle maps, secrets, drafts
+_PRIVATE_*
+
+# Editor cruft
+*.swp
+*~
+.idea/
+.vscode/
+
+# Pre-domain staging — mobile captures that haven't been triaged yet.
+# SSD-only by design; nothing here is canonical or mirrored to GitHub.
+# Once /triage moves an item to <domain>/raw/<source-id>/ it joins git.
+# Leading slash anchors to repo root so it doesn't match scripts/inbox/.
+/inbox/
+
+# Drain script local state & secrets (the rest of scripts/inbox/ IS tracked)
+/scripts/inbox/.env
+/scripts/inbox/.venv/
+/scripts/inbox/.state.json
+/scripts/inbox/*.log

@@ -1,0 +1,6 @@
+requests>=2.31
+
+# Optional — enables voice-note transcription. Heavy (~1GB with base model).
+#   pip install openai-whisper
+#   brew install ffmpeg
+# Or use whisper.cpp for a lighter alternative.
