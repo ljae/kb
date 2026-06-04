@@ -402,47 +402,53 @@ function setSuggestion(text) {
     autoResize(el);
 }
 
-// ─── Gemini prompts ───────────────────────────────────────────────────────────
+// ─── Gemini prompts (labeled text — no JSON, no parsing fragility) ───────────
 function openingPrompt() {
     const s = scenario;
     return `You are ${s.persona}.
 Start a conversation with Jae (Korean software engineer & quant researcher) about: ${s.situation}
+Use these terms naturally when they fit: ${s.vocabulary.join(', ')}
 
-Ask ONE direct, engaging opening question. No long preamble.
-Vocabulary to use naturally when fitting: ${s.vocabulary.join(', ')}
-
-Return ONLY valid JSON (no markdown):
-{"tutor":"<1-sentence intro + opening question>","suggestion":"<one natural example answer Jae could say, full sentence>"}`;
+Reply in EXACTLY this format — two lines, nothing else:
+TUTOR: [your opening — brief intro + one direct question, 1-2 sentences]
+SUGGESTION: [one full example answer Jae could say, 1-2 sentences]`;
 }
 
 function turnPrompt() {
     const s = scenario;
-    return `You are ${s.persona} having a real conversation with Jae (Korean software engineer & quant researcher).
+    return `You are ${s.persona} talking with Jae (Korean software engineer & quant researcher).
 Context: ${s.situation}
+Rules: dig deeper each turn, never repeat a question, react to what Jae said, 2-3 sentences max.
+Use these terms naturally: ${s.vocabulary.join(', ')}
 
-RULES:
-- Each question must be DIFFERENT from all previous ones — dig deeper, follow the thread
-- React genuinely to what Jae just said before asking your next question
-- Keep replies 2-3 sentences max — spoken conversation only
-- Use these terms naturally when fitting: ${s.vocabulary.join(', ')}
-
-Return ONLY valid JSON (no markdown):
-{"improved":"<Jae's sentence as fluent natural English, same meaning — fix grammar/word choice>","note":"<one grammar correction or empty string>","tutor":"<your reaction + one NEW follow-up question>","suggestion":"<one example answer Jae could give, full natural sentence>"}`;
+Reply in EXACTLY this format — four lines, nothing else:
+IMPROVED: [Jae's sentence rewritten as fluent natural English, same meaning]
+NOTE: [one grammar correction, or leave blank]
+TUTOR: [your reaction + one new follow-up question, 2-3 sentences]
+SUGGESTION: [one full example answer Jae could give, 1-2 sentences]`;
 }
 
-// ─── JSON extraction (4 fallback layers) ─────────────────────────────────────
-function extractJSON(raw) {
+// ─── Parse labeled response ───────────────────────────────────────────────────
+function parseOpening(raw) {
     if (!raw) return null;
-    try { return JSON.parse(raw); } catch {}
-    const stripped = raw.replace(/^```(?:json)?\s*\n?/i,'').replace(/\n?```\s*$/,'').trim();
-    try { return JSON.parse(stripped); } catch {}
-    const m = raw.match(/\{[\s\S]*\}/);
-    if (m) try { return JSON.parse(m[0]); } catch {}
-    // Field-by-field regex fallback
-    const str = k => { const r=raw.match(new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`)); return r?r[1]:null; };
-    const tutor = str('tutor');
-    if (tutor) return { improved:str('improved')||'', note:str('note')||'', tutor, suggestion:str('suggestion')||'' };
-    return null;
+    const get = label => {
+        const m = raw.match(new RegExp(`${label}:\\s*([\\s\\S]+?)(?=\\n[A-Z]+:|$)`));
+        return m ? m[1].trim() : '';
+    };
+    const tutor = get('TUTOR');
+    if (!tutor) return null;
+    return { tutor, suggestion: get('SUGGESTION') };
+}
+
+function parseTurn(raw) {
+    if (!raw) return null;
+    const get = label => {
+        const m = raw.match(new RegExp(`${label}:\\s*([\\s\\S]+?)(?=\\n[A-Z]+:|$)`));
+        return m ? m[1].trim() : '';
+    };
+    const tutor = get('TUTOR');
+    if (!tutor) return null;
+    return { improved: get('IMPROVED'), note: get('NOTE'), tutor, suggestion: get('SUGGESTION') };
 }
 
 // ─── Start conversation (Gemini generates the opening) ────────────────────────
@@ -455,7 +461,7 @@ async function startConversation() {
               body: JSON.stringify({
                 contents: [{ role:'user', parts:[{text:'[START]'}] }],
                 system_instruction: { parts:[{text: openingPrompt()}] },
-                generationConfig: { temperature:0.9, maxOutputTokens:400 }
+                generationConfig: { temperature:0.9, maxOutputTokens:300 }
               })
             }
         );
@@ -465,23 +471,21 @@ async function startConversation() {
             const e = await res.json().catch(()=>({}));
             const msg = e?.error?.message || `HTTP ${res.status}`;
             appendMsg(`⚠ API error: ${msg}`, 'system');
-            appendMsg('Tap the ↺ button above to retry, or ⚙ to check your API key.', 'system');
+            appendMsg('Tap ↺ to retry, or ⚙ to update your API key.', 'system');
             return;
         }
 
         const data = await res.json();
-        // Show finish reason if content is blocked/empty
         const candidate = data?.candidates?.[0];
         const raw = candidate?.content?.parts?.[0]?.text || '';
         if (!raw) {
-            const reason = candidate?.finishReason || 'UNKNOWN';
-            appendMsg(`⚠ Empty response (reason: ${reason}). Tap ↺ to retry.`, 'system');
+            appendMsg(`⚠ Empty response (${candidate?.finishReason||'unknown'}). Tap ↺ to retry.`, 'system');
             return;
         }
 
-        const parsed = extractJSON(raw) || {};
-        const tutor = parsed.tutor || raw;   // fall back to showing raw text if JSON fails
-        const suggestion = parsed.suggestion || '';
+        const parsed = parseOpening(raw);
+        const tutor = parsed?.tutor || raw.replace(/^TUTOR:\s*/i,'').split('\n')[0].trim() || raw;
+        const suggestion = parsed?.suggestion || '';
 
         history.push({ role:'model', parts:[{text:tutor}] });
         conversationLog.push({ role:'tutor', text:tutor });
@@ -505,20 +509,21 @@ async function callGemini(userText) {
               body: JSON.stringify({
                 system_instruction: { parts:[{text: turnPrompt()}] },
                 contents: history,
-                generationConfig: { temperature:0.85, maxOutputTokens:700 }
+                generationConfig: { temperature:0.85, maxOutputTokens:500 }
               })
             }
         );
         hideTyping();
         if (!res.ok) {
             const e=await res.json().catch(()=>({}));
-            appendMsg(`⚠ API error: ${e?.error?.message||res.status}`,'system');
-            if ((e?.error?.message||'').toLowerCase().includes('api key')) goSetup();
+            const msg = e?.error?.message || res.status;
+            appendMsg(`⚠ API error: ${msg}`,'system');
+            if ((msg+'').toLowerCase().includes('api key')) goSetup();
             return;
         }
         const data = await res.json();
-        const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        const parsed = extractJSON(raw) || { improved:userText, note:'', tutor:'(error)', suggestion:'' };
+        const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const parsed = parseTurn(raw) || { improved:userText, note:'', tutor: raw||'(no response)', suggestion:'' };
         const { improved=userText, note='', tutor='', suggestion='' } = parsed;
 
         conversationLog.push({ role:'user', original:userText, improved, note });
