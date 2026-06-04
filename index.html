@@ -498,21 +498,31 @@ function clearSuggestions() {
 function useSuggestion(el) {
     const text = el.textContent;
     clearSuggestions();
-    unlockAudio();
-    handleInput(text);
+    // Fill the text input as a template — user can edit then send, or tap mic and speak it
+    const input = document.getElementById('txt');
+    input.value = text;
+    input.focus();
+    // scroll input into view on iOS
+    setTimeout(() => input.scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
 }
 
-// ─── JSON extraction (handles plain JSON, ```json fences, partial wrapping) ───
+// ─── JSON extraction — 4 fallback layers ─────────────────────────────────────
 function extractJSON(raw) {
     if (!raw) return null;
     // 1. Direct parse
     try { return JSON.parse(raw); } catch {}
-    // 2. Strip ```json ... ``` or ``` ... ``` fences
-    const stripped = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
+    // 2. Strip ```json ... ``` fences
+    const stripped = raw.replace(/^```(?:json)?\s*\n?/i,'').replace(/\n?```\s*$/,'').trim();
     try { return JSON.parse(stripped); } catch {}
-    // 3. Grab the first {...} block (handles text before/after)
+    // 3. First { ... } block
     const m = raw.match(/\{[\s\S]*\}/);
     if (m) try { return JSON.parse(m[0]); } catch {}
+    // 4. Field-by-field regex (survives unescaped newlines / truncation)
+    const str  = k => { const r=raw.match(new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`)); return r?r[1]:null; };
+    const arr  = k => { const r=raw.match(new RegExp(`"${k}"\\s*:\\s*\\[([^\\]]*?)\\]`));
+                         if(!r) return []; return [...r[1].matchAll(/"((?:[^"\\\\]|\\\\.)*)"/g)].map(x=>x[1]); };
+    const tutor = str('tutor');
+    if (tutor) return { improved: str('improved')||'', note: str('note')||'', tutor, suggestions: arr('suggestions') };
     return null;
 }
 
@@ -545,7 +555,17 @@ async function callGemini(userText) {
                     generationConfig: {
                         temperature: 0.8,
                         maxOutputTokens: 1024,
-                        responseMimeType: 'application/json'
+                        responseMimeType: 'application/json',
+                        responseSchema: {
+                            type: 'OBJECT',
+                            properties: {
+                                improved:    { type: 'STRING' },
+                                note:        { type: 'STRING' },
+                                tutor:       { type: 'STRING' },
+                                suggestions: { type: 'ARRAY', items: { type: 'STRING' } }
+                            },
+                            required: ['improved','note','tutor','suggestions']
+                        }
                     }
                 })
             }
@@ -569,18 +589,21 @@ async function callGemini(userText) {
         // Log user turn
         conversationLog.push({ role:'user', original: userText, improved, note });
 
-        // Show improved bubble (don't speak yet — queue after user bubble)
+        // Show improved bubble immediately
         const isDifferent = improved.trim().toLowerCase() !== userText.trim().toLowerCase();
         if (isDifferent) showImprovedBubble(improved);
+        if (note) setTimeout(() => appendMsg(`📝 ${note}`, 'correction'), 80);
 
-        // Log tutor turn
-        history.push({ role:'model', parts:[{ text: tutor }] });
-        conversationLog.push({ role:'tutor', text: tutor });
-        appendMsg(tutor, 'tutor');
-
-        // Sequential TTS: improved first (if different), then tutor, then show suggestions
+        // Sequential flow: shadow improved ×2 → show & speak tutor → suggestions
         (async () => {
-            if (isDifferent) await speak(improved);
+            if (isDifferent) {
+                await speak(improved);           // 1st shadow
+                await speak(improved);           // 2nd shadow (repeat for muscle memory)
+            }
+            // Now show and speak the tutor's follow-up question
+            history.push({ role:'model', parts:[{ text: tutor }] });
+            conversationLog.push({ role:'tutor', text: tutor });
+            appendMsg(tutor, 'tutor');
             await speak(tutor);
             showSuggestions(suggestions);
         })();
@@ -653,15 +676,29 @@ function updateMic() {
 }
 
 // ─── TTS (Gemini neural) ──────────────────────────────────────────────────────
-// 100ms silent WAV — iOS requires a real src to grant audio permission
-const SILENT_WAV = 'data:audio/wav;base64,UklGRl9vT1dBVkVmbXQgEAAAAA' +
-    'AAAQAARKwAAIhYAQACABAAZGF0YUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+
+// Build a 200ms silent mono 8-bit 8kHz WAV blob URL for iOS audio unlock
+function makeSilentUrl() {
+    const sr=8000, n=1600; // 200ms @ 8kHz
+    const buf=new ArrayBuffer(44+n); const v=new DataView(buf);
+    const s=(o,t)=>[...t].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+    s(0,'RIFF'); v.setUint32(4,36+n,true); s(8,'WAVE'); s(12,'fmt ');
+    v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,sr,true); v.setUint32(28,sr,true);
+    v.setUint16(32,1,true); v.setUint16(34,8,true);
+    s(36,'data'); v.setUint32(40,n,true);
+    new Uint8Array(buf,44).fill(128); // 128 = silence for 8-bit unsigned PCM
+    return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+}
 
 function unlockAudio() {
     const el = ttsEl();
     if (!el || el.dataset.unlocked) return;
-    el.src = SILENT_WAV;
-    el.play().then(()=>{ el.pause(); el.src=''; el.dataset.unlocked='1'; }).catch(()=>{});
+    const url = makeSilentUrl();
+    el.src = url;
+    el.play()
+        .then(()=>{ el.pause(); el.src=''; el.dataset.unlocked='1'; URL.revokeObjectURL(url); })
+        .catch(()=>{ URL.revokeObjectURL(url); });
 }
 
 function stopAudio() {
