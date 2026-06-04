@@ -405,50 +405,85 @@ function setSuggestion(text) {
 // ─── Gemini prompts (labeled text — no JSON, no parsing fragility) ───────────
 function openingPrompt() {
     const s = scenario;
-    return `You are ${s.persona}.
-Start a conversation with Jae (Korean software engineer & quant researcher) about: ${s.situation}
-Use these terms naturally when they fit: ${s.vocabulary.join(', ')}
+    return `You are ${s.persona}. Start a conversation with Jae (Korean software engineer & quant researcher) about: ${s.situation}
+Vocabulary to use naturally: ${s.vocabulary.join(', ')}
 
-Reply in EXACTLY this format — two lines, nothing else:
-TUTOR: [your opening — brief intro + one direct question, 1-2 sentences]
-SUGGESTION: [one full example answer Jae could say, 1-2 sentences]`;
+Write exactly two lines. Start the first line with "TUTOR:" and the second with "SUGGESTION:". No other text before, between, or after.
+TUTOR: <brief intro + one direct question, 2 sentences max>
+SUGGESTION: <one full natural example answer Jae could say, 1-2 sentences>`;
 }
 
 function turnPrompt() {
     const s = scenario;
     return `You are ${s.persona} talking with Jae (Korean software engineer & quant researcher).
 Context: ${s.situation}
-Rules: dig deeper each turn, never repeat a question, react to what Jae said, 2-3 sentences max.
-Use these terms naturally: ${s.vocabulary.join(', ')}
+Rules: react to what Jae said, dig deeper each turn, never repeat a question, 2-3 sentences max.
+Vocabulary: ${s.vocabulary.join(', ')}
 
-Reply in EXACTLY this format — four lines, nothing else:
-IMPROVED: [Jae's sentence rewritten as fluent natural English, same meaning]
-NOTE: [one grammar correction, or leave blank]
-TUTOR: [your reaction + one new follow-up question, 2-3 sentences]
-SUGGESTION: [one full example answer Jae could give, 1-2 sentences]`;
+Write exactly four lines starting with these labels. No other text.
+IMPROVED: <Jae's sentence rewritten as fluent natural English, same meaning>
+NOTE: <one grammar fix, or leave blank>
+TUTOR: <your reaction + one new follow-up question>
+SUGGESTION: <one full example answer Jae could give>`;
 }
 
 // ─── Parse labeled response ───────────────────────────────────────────────────
+// Labels: TUTOR / SUGGESTION / IMPROVED / NOTE
+// Handles: labeled format, partial labels, no labels at all
+
+const LABELS = '(?:IMPROVED|NOTE|TUTOR|SUGGESTION)';
+
+function getField(raw, label) {
+    // Match LABEL: ... up to next known label or end-of-string
+    const m = raw.match(new RegExp(`${label}:\\s*([\\s\\S]+?)(?=\\n${LABELS}:|$)`, 'i'));
+    return m ? m[1].trim() : '';
+}
+
+function splitOnLabel(raw, label) {
+    const idx = raw.search(new RegExp(label + ':', 'i'));
+    if (idx === -1) return ['', ''];
+    return [raw.slice(0, idx).trim(), raw.slice(idx + label.length + 1).trim()];
+}
+
 function parseOpening(raw) {
     if (!raw) return null;
-    const get = label => {
-        const m = raw.match(new RegExp(`${label}:\\s*([\\s\\S]+?)(?=\\n[A-Z]+:|$)`));
-        return m ? m[1].trim() : '';
-    };
-    const tutor = get('TUTOR');
-    if (!tutor) return null;
-    return { tutor, suggestion: get('SUGGESTION') };
+
+    // 1. Labeled format
+    const tutor = getField(raw, 'TUTOR');
+    if (tutor) return { tutor, suggestion: getField(raw, 'SUGGESTION') };
+
+    // 2. Has SUGGESTION: somewhere — everything before it is the tutor text
+    if (/SUGGESTION:/i.test(raw)) {
+        const [t, s] = splitOnLabel(raw, 'SUGGESTION');
+        if (t) return { tutor: t, suggestion: s };
+    }
+
+    // 3. No labels — entire response is the tutor question
+    return { tutor: raw.trim(), suggestion: '' };
 }
 
 function parseTurn(raw) {
     if (!raw) return null;
-    const get = label => {
-        const m = raw.match(new RegExp(`${label}:\\s*([\\s\\S]+?)(?=\\n[A-Z]+:|$)`));
-        return m ? m[1].trim() : '';
-    };
-    const tutor = get('TUTOR');
-    if (!tutor) return null;
-    return { improved: get('IMPROVED'), note: get('NOTE'), tutor, suggestion: get('SUGGESTION') };
+
+    // 1. Fully labeled
+    const tutor = getField(raw, 'TUTOR');
+    if (tutor) {
+        return {
+            improved:   getField(raw, 'IMPROVED'),
+            note:       getField(raw, 'NOTE'),
+            tutor,
+            suggestion: getField(raw, 'SUGGESTION'),
+        };
+    }
+
+    // 2. Has SUGGESTION: — everything before is the tutor block
+    if (/SUGGESTION:/i.test(raw)) {
+        const [t, s] = splitOnLabel(raw, 'SUGGESTION');
+        return { improved: '', note: '', tutor: t || raw.trim(), suggestion: s };
+    }
+
+    // 3. No labels at all
+    return { improved: '', note: '', tutor: raw.trim(), suggestion: '' };
 }
 
 // ─── Start conversation (Gemini generates the opening) ────────────────────────
@@ -484,7 +519,7 @@ async function startConversation() {
         }
 
         const parsed = parseOpening(raw);
-        const tutor = parsed?.tutor || raw.replace(/^TUTOR:\s*/i,'').split('\n')[0].trim() || raw;
+        const tutor      = parsed?.tutor      || raw.trim();
         const suggestion = parsed?.suggestion || '';
 
         history.push({ role:'model', parts:[{text:tutor}] });
