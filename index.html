@@ -502,6 +502,20 @@ function useSuggestion(el) {
     handleInput(text);
 }
 
+// ─── JSON extraction (handles plain JSON, ```json fences, partial wrapping) ───
+function extractJSON(raw) {
+    if (!raw) return null;
+    // 1. Direct parse
+    try { return JSON.parse(raw); } catch {}
+    // 2. Strip ```json ... ``` or ``` ... ``` fences
+    const stripped = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
+    try { return JSON.parse(stripped); } catch {}
+    // 3. Grab the first {...} block (handles text before/after)
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) try { return JSON.parse(m[0]); } catch {}
+    return null;
+}
+
 // ─── Gemini API (structured JSON) ─────────────────────────────────────────────
 function sysPrompt() {
     const s = scenario;
@@ -557,9 +571,7 @@ async function callGemini(userText) {
         const data = await res.json();
         const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
 
-        let parsed;
-        try { parsed = JSON.parse(raw); }
-        catch { parsed = { improved: userText, note:'', tutor: raw, suggestions: [] }; }
+        const parsed = extractJSON(raw) || { improved: userText, note:'', tutor: raw, suggestions: [] };
 
         const { improved = userText, note = '', tutor = '', suggestions = [] } = parsed;
 
@@ -595,8 +607,18 @@ function initRecog() {
     const r = new SR();
     r.continuous = false; r.interimResults = false; r.lang = 'en-US';
     r.onresult = e => { const t = e.results[0][0].transcript; stopRec(); handleInput(t); };
-    r.onerror  = e => { stopRec(); if (e.error!=='no-speech') appendMsg(`Mic error: ${e.error}`,'system'); };
-    r.onend    = () => { if (isRec) stopRec(); };
+    r.onerror  = e => {
+        stopRec();
+        const msgs = {
+            'not-allowed': '🎤 Mic blocked. In Safari: Settings → [this site] → Microphone → Allow, then reload.',
+            'no-speech':   null,   // silent — user just didn't speak
+            'network':     '⚠ Speech recognition needs a network connection.',
+            'aborted':     null,
+        };
+        const msg = msgs[e.error] !== undefined ? msgs[e.error] : `⚠ Mic error: ${e.error}`;
+        if (msg) appendMsg(msg, 'system');
+    };
+    r.onend = () => { if (isRec) stopRec(); };
     return r;
 }
 
@@ -608,10 +630,21 @@ function toggleMic() {
 
 function startRec() {
     if (!recog) recog = initRecog();
-    if (!recog) { document.getElementById('txt').focus(); appendMsg('Voice unavailable — please type.','system'); return; }
+    if (!recog) {
+        appendMsg('⚠ Speech recognition not supported in this browser. Please type instead.', 'system');
+        document.getElementById('txt').focus();
+        return;
+    }
     stopAudio();
-    try { recog.start(); } catch(e) { return; }
-    isRec = true; updateMic();
+    try {
+        recog.start();
+        isRec = true; updateMic();
+    } catch(e) {
+        // Already started — recreate and try once more
+        recog = initRecog();
+        try { recog.start(); isRec = true; updateMic(); }
+        catch(e2) { appendMsg(`⚠ Could not start mic: ${e2.message}`, 'system'); }
+    }
 }
 
 function stopRec() {
