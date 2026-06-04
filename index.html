@@ -205,7 +205,7 @@
     <div class="setup-title">Daily English</div>
     <div class="setup-desc">
         Voice conversation practice using your own knowledge topics.<br>
-        Powered by Gemini 2.0 Flash.
+        Powered by Gemini 3.5 Flash + Gemini neural TTS.
     </div>
     <input id="key-in" type="password" class="setup-input"
            placeholder="Paste your Gemini API key"
@@ -223,11 +223,22 @@
             <div class="header-title">Daily English</div>
             <div class="header-date" id="hdr-date"></div>
         </div>
-        <button class="icon-btn" onclick="goSetup()" title="Settings">
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.02 7.02 0 0 0-1.62-.94l-.36-2.54A.48.48 0 0 0 14 2h-3.84a.48.48 0 0 0-.48.41l-.36 2.54a7.1 7.1 0 0 0-1.61.94l-2.4-.96a.48.48 0 0 0-.58.22L2.8 8.47a.47.47 0 0 0 .11.61l2.03 1.58A7.2 7.2 0 0 0 4.86 12c0 .32.02.63.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.3.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.06.28.31.48.59.48h3.84c.28 0 .53-.2.58-.48l.36-2.54c.58-.27 1.12-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/>
-            </svg>
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <select id="voice-sel" onchange="setVoice(this.value)"
+                style="background:#1a1a2c;border:1px solid #2d2d45;border-radius:8px;
+                       color:#9999cc;font-size:12px;padding:5px 8px;cursor:pointer;outline:none;">
+                <option value="Aoede">Aoede ♀</option>
+                <option value="Kore">Kore ♀</option>
+                <option value="Puck">Puck ♂</option>
+                <option value="Charon">Charon ♂</option>
+                <option value="Fenrir">Fenrir ♂</option>
+            </select>
+            <button class="icon-btn" onclick="goSetup()" title="Settings">
+                <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.02 7.02 0 0 0-1.62-.94l-.36-2.54A.48.48 0 0 0 14 2h-3.84a.48.48 0 0 0-.48.41l-.36 2.54a7.1 7.1 0 0 0-1.61.94l-2.4-.96a.48.48 0 0 0-.58.22L2.8 8.47a.47.47 0 0 0 .11.61l2.03 1.58A7.2 7.2 0 0 0 4.86 12c0 .32.02.63.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.3.59.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.06.28.31.48.59.48h3.84c.28 0 .53-.2.58-.48l.36-2.54c.58-.27 1.12-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 0 0-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
     <div class="chip-row" id="chip-row"></div>
@@ -369,7 +380,10 @@ let history = [];
 let recog = null;
 let isRec = false;
 let isTalking = false;
-const synth = window.speechSynthesis;
+const synth = window.speechSynthesis; // fallback only
+let audioSrc = null;
+let audioCtx = null;
+let ttsVoice = localStorage.getItem('tts-voice') || 'Kore';
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function init() {
@@ -394,13 +408,20 @@ function saveKey() {
 function goSetup() {
     document.getElementById('setup-screen').style.display = 'flex';
     document.getElementById('main-screen').style.display = 'none';
-    synth.cancel();
+    stopAudio();
+}
+
+function setVoice(name) {
+    ttsVoice = name;
+    localStorage.setItem('tts-voice', name);
 }
 
 function showMain() {
     document.getElementById('setup-screen').style.display = 'none';
     const m = document.getElementById('main-screen');
     m.style.display = 'flex';
+    const sel = document.getElementById('voice-sel');
+    if (sel) sel.value = ttsVoice;
     renderChips();
     const dayOfYear = Math.floor(
         (new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000
@@ -422,7 +443,7 @@ function pickScenario(idx) {
 
     scenario = SCENARIOS[idx];
     history = [];
-    synth.cancel();
+    stopAudio();
 
     document.getElementById('s-card').innerHTML = `
         <div class="s-label">${scenario.topic}</div>
@@ -559,7 +580,7 @@ function initRecog() {
 }
 
 function toggleMic() {
-    if (isTalking) { synth.cancel(); isTalking = false; updateMic(); return; }
+    if (isTalking) { stopAudio(); return; }
     isRec ? stopRec() : startRec();
 }
 
@@ -570,7 +591,7 @@ function startRec() {
         appendMsg('Voice not available in this browser — please type.', 'system');
         return;
     }
-    synth.cancel();
+    stopAudio();
     try { recog.start(); } catch (e) { return; }
     isRec = true; updateMic();
 }
@@ -595,32 +616,73 @@ function updateMic() {
     }
 }
 
-// ─── Text-to-Speech ───────────────────────────────────────────────────────────
-function speak(text) {
-    if (!synth) return;
+// ─── Text-to-Speech (Gemini neural TTS) ──────────────────────────────────────
+// Voices: Aoede (warm F), Kore (clear F), Puck (warm M), Charon (deep M), Fenrir (energetic M)
+
+function stopAudio() {
+    try { audioSrc?.stop(); } catch (e) {}
+    try { audioCtx?.close(); } catch (e) {}
+    audioSrc = null; audioCtx = null;
+    isTalking = false; updateMic();
+}
+
+async function speak(text) {
     const clean = text.replace(/\[Note:[^\]]+\]/g, '').trim();
+    if (!clean) return;
+    stopAudio();
+    try {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: clean }] }],
+                    generationConfig: {
+                        responseModalities: ['AUDIO'],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: ttsVoice }
+                            }
+                        }
+                    }
+                })
+            }
+        );
+        if (!res.ok) throw new Error(`TTS ${res.status}`);
+        const data = await res.json();
+        const b64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (!b64) throw new Error('no audio');
+
+        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        const pcm   = new Int16Array(bytes.buffer);
+        audioCtx    = new (window.AudioContext || window.webkitAudioContext)();
+        const buf   = audioCtx.createBuffer(1, pcm.length, 24000);
+        const ch    = buf.getChannelData(0);
+        for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
+
+        audioSrc = audioCtx.createBufferSource();
+        audioSrc.buffer = buf;
+        audioSrc.connect(audioCtx.destination);
+        isTalking = true; updateMic();
+        audioSrc.onended = () => { isTalking = false; updateMic(); audioCtx?.close(); };
+        audioSrc.start();
+    } catch (err) {
+        console.warn('Gemini TTS error, falling back:', err);
+        speakFallback(clean);
+    }
+}
+
+function speakFallback(text) {
+    if (!synth) return;
     synth.cancel();
-
-    const u = new SpeechSynthesisUtterance(clean);
-    u.lang = 'en-US';
-    u.rate = 0.90;
-    u.pitch = 1.0;
-
-    const voices = synth.getVoices();
-    const pick = voices.find(v =>
-        v.lang.startsWith('en') &&
-        (v.name.includes('Samantha') || v.name.includes('Karen') ||
-         v.name.includes('Moira') || v.name.includes('Google US'))
-    ) || voices.find(v => v.lang.startsWith('en-US'));
-    if (pick) u.voice = pick;
-
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.90;
     u.onstart = () => { isTalking = true;  updateMic(); };
     u.onend   = () => { isTalking = false; updateMic(); };
     u.onerror = () => { isTalking = false; updateMic(); };
     synth.speak(u);
 }
-
-if (synth) synth.addEventListener('voiceschanged', () => {});
 
 // ─── Input handler ────────────────────────────────────────────────────────────
 function handleInput(text) {
