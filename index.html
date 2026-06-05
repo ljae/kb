@@ -496,7 +496,10 @@ async function startConversation() {
               body: JSON.stringify({
                 contents: [{ role:'user', parts:[{text:'[START]'}] }],
                 system_instruction: { parts:[{text: openingPrompt()}] },
-                generationConfig: { temperature:0.9, maxOutputTokens:300 }
+                // thinkingBudget:0 disables reasoning tokens — they otherwise
+                // eat maxOutputTokens and truncate the visible reply (root cause).
+                generationConfig: { temperature:0.9, maxOutputTokens:800,
+                                    thinkingConfig:{ thinkingBudget:0 } }
               })
             }
         );
@@ -513,10 +516,13 @@ async function startConversation() {
         const data = await res.json();
         const candidate = data?.candidates?.[0];
         const raw = candidate?.content?.parts?.[0]?.text || '';
+        const finish = candidate?.finishReason || 'unknown';
+        console.log('[opening] finishReason:', finish, 'usage:', data?.usageMetadata);
         if (!raw) {
-            appendMsg(`⚠ Empty response (${candidate?.finishReason||'unknown'}). Tap ↺ to retry.`, 'system');
+            appendMsg(`⚠ Empty response (${finish}). Tap ↺ to retry.`, 'system');
             return;
         }
+        if (finish === 'MAX_TOKENS') appendMsg(`⚠ Reply truncated (MAX_TOKENS) — thinking budget may not be disabled on this model.`, 'system');
 
         const parsed = parseOpening(raw);
         const tutor      = parsed?.tutor      || raw.trim();
@@ -544,7 +550,9 @@ async function callGemini(userText) {
               body: JSON.stringify({
                 system_instruction: { parts:[{text: turnPrompt()}] },
                 contents: history,
-                generationConfig: { temperature:0.85, maxOutputTokens:500 }
+                // thinkingBudget:0 — see startConversation note (same root cause)
+                generationConfig: { temperature:0.85, maxOutputTokens:1000,
+                                    thinkingConfig:{ thinkingBudget:0 } }
               })
             }
         );
@@ -557,7 +565,11 @@ async function callGemini(userText) {
             return;
         }
         const data = await res.json();
-        const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const candidate = data?.candidates?.[0];
+        const raw = candidate?.content?.parts?.[0]?.text || '';
+        const finish = candidate?.finishReason || 'unknown';
+        console.log('[turn] finishReason:', finish, 'usage:', data?.usageMetadata);
+        if (finish === 'MAX_TOKENS') appendMsg(`⚠ Reply truncated (MAX_TOKENS).`, 'system');
         const parsed = parseTurn(raw) || { improved:userText, note:'', tutor: raw||'(no response)', suggestion:'' };
         const { improved=userText, note='', tutor='', suggestion='' } = parsed;
 
